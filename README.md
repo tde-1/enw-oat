@@ -1,3 +1,54 @@
+# ENW Zombies build of OpenAssetTools (`enw-oat`)
+
+This repository is [OpenAssetTools](https://github.com/Laupetin/OpenAssetTools) release
+**v0.33.0** (upstream commit `7d027e8`, full upstream history kept) plus **one commit** from
+ENW Zombies: a writer for T4 (Call of Duty: World at War) `GfxWorld`. The **ENW Zombies
+launcher bundles the `Unlinker.exe` built from this repository** and runs it as a separate
+program, on the player's own PC, over the player's own game and map files, to build the 3D
+replay viewer's local copy of a map. Nothing it produces leaves the PC.
+
+Each launcher release that ships a new `Unlinker.exe` names the tag it was built from
+(`enw-YYYY-MM-DD`) in its `THIRD_PARTY/OpenAssetTools/SOURCE.txt`.
+
+## What changed from upstream
+
+| File | Change |
+|---|---|
+| `src/ObjWriting/Game/T4/World/GfxWorldDumperT4.h` | new: the dumper's class |
+| `src/ObjWriting/Game/T4/World/GfxWorldDumperT4.cpp` | new: upstream reads T4 `GfxWorld` from a zone but has no writer. `--include-assets gfxworld` writes `world/<bsp>.{json,bin}` (surfaces, materials, vertices, indices, brush models, static-model placements) and the baked lighting (`<bsp>.lmap.bin`, `<bsp>.lightmap<N>_{primary,secondary}.dds`, json `lighting` / `surfaceLighting`). `ENW_GFXWORLD_SHADERS=1` also writes the lit techniques' shader bytecode (debugging). |
+| `src/ObjWriting/Game/T4/ObjWriterT4.cpp` | two lines: include the header and `RegisterAssetDumper(std::make_unique<gfx_world::DumperT4>())` |
+| `README.md` | this section |
+
+Nothing else upstream is touched.
+
+## How to build `Unlinker.exe`
+
+Requirements are upstream's: Windows, Visual Studio 2022 with the C++ workload, a Windows SDK, git.
+
+```powershell
+git clone --recurse-submodules --branch enw-2026-09-28 https://github.com/tde-1/enw-oat.git
+cd enw-oat
+.\generate.bat          # upstream's premake step; writes build\
+# Build the two code generators and the ZoneCode step first, then UnlinkerCli.
+# (Building a project on its own leaves $(SolutionDir) empty, so pass it.)
+$msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1
+foreach ($p in 'RawTemplater\RawTemplater', 'ZoneCodeGenerator\ZoneCodeGenerator', 'ZoneCode\ZoneCode', 'UnlinkerCli\UnlinkerCli') {
+    & $msbuild "build\src\$p.vcxproj" /p:Configuration=Release /p:Platform=x64 "/p:SolutionDir=$PWD\build\" /m:3 /nologo /v:minimal
+}
+# Result: build\bin\Release_x64\Unlinker.exe
+```
+
+Building the whole solution (`build\*.sln*`, Release|x64) in Visual Studio works too. These are
+the same steps as ENW Zombies' own build script (`tools/maps/oat-t4-world/build-oat.ps1`).
+
+## Licence
+
+GNU General Public License v3.0, as upstream: see [`LICENSE`](LICENSE). The ENW Zombies
+additions are derivatives of OpenAssetTools and are GPL-3.0 as well
+(`SPDX-License-Identifier: GPL-3.0-or-later` in each new file).
+
+---
+
 # ![OpenAssetTools Logo](repo/logo_64_64.png) OpenAssetTools
 
 [![GitHub Release](https://img.shields.io/github/v/release/laupetin/openassettools)](https://github.com/Laupetin/OpenAssetTools/releases/latest)
