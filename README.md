@@ -1,8 +1,9 @@
 # ENW Zombies build of OpenAssetTools (`enw-oat`)
 
 This repository is [OpenAssetTools](https://github.com/Laupetin/OpenAssetTools) release
-**v0.33.0** (upstream commit `7d027e8`, full upstream history kept) plus **one commit** from
-ENW Zombies: a writer for T4 (Call of Duty: World at War) `GfxWorld`. The **ENW Zombies
+**v0.33.0** (upstream commit `7d027e8`, full upstream history kept) plus two commits from
+ENW Zombies: a writer for T4 (Call of Duty: World at War) `GfxWorld`, and an Unlinker option
+to dump only named assets (`--include-names`). The **ENW Zombies
 launcher bundles the `Unlinker.exe` built from this repository** and runs it as a separate
 program, on the player's own PC, over the player's own game and map files, to build the 3D
 replay viewer's local copy of a map. Nothing it produces leaves the PC.
@@ -17,16 +18,18 @@ Each launcher release that ships a new `Unlinker.exe` names the tag it was built
 | `src/ObjWriting/Game/T4/World/GfxWorldDumperT4.h` | new: the dumper's class |
 | `src/ObjWriting/Game/T4/World/GfxWorldDumperT4.cpp` | new: upstream reads T4 `GfxWorld` from a zone but has no writer. `--include-assets gfxworld` writes `world/<bsp>.{json,bin}` (surfaces, materials, vertices, indices, brush models, static-model placements) and the baked lighting (`<bsp>.lmap.bin`, `<bsp>.lightmap<N>_{primary,secondary}.dds`, json `lighting` / `surfaceLighting`). `ENW_GFXWORLD_SHADERS=1` also writes the lit techniques' shader bytecode (debugging). |
 | `src/ObjWriting/Game/T4/ObjWriterT4.cpp` | two lines: include the header and `RegisterAssetDumper(std::make_unique<gfx_world::DumperT4>())` |
+| `src/Unlinking/UnlinkerArgs.{h,cpp}`, `src/Unlinking/Unlinker.cpp` | `--include-names <file>`: a file of `<type>,<name>` lines (`<type>,*` = every asset of that type). Only those assets and, recursively, the assets they depend on are dumped; `--include-assets` still picks the types. The launcher uses it to dump a map's world, entities and raw files, then only the models, materials and images the map places (tag `enw-2026-09-29` on). |
+| `src/ObjWriting/ObjWriting.{h,cpp}`, `src/ObjWriting/Dumping/AbstractAssetDumper.h` | the set of assets to dump, checked in the dumper loop |
 | `README.md` | this section |
 
-Nothing else upstream is touched.
+Nothing else upstream is touched. Without `--include-names` the Unlinker behaves exactly as upstream.
 
 ## How to build `Unlinker.exe`
 
 Requirements are upstream's: Windows, Visual Studio 2022 with the C++ workload, a Windows SDK, git.
 
 ```powershell
-git clone --recurse-submodules --branch enw-2026-09-28 https://github.com/tde-1/enw-oat.git
+git clone --recurse-submodules --branch enw-2026-09-29 https://github.com/tde-1/enw-oat.git
 cd enw-oat
 .\generate.bat          # upstream's premake step; writes build\
 # Build the two code generators and the ZoneCode step first, then UnlinkerCli.

@@ -55,6 +55,7 @@ public:
     std::vector<std::string> m_specified_asset_types;
     std::unordered_map<std::string, size_t> m_specified_asset_type_map;
     AssetTypeHandling m_asset_type_handling;
+    std::string m_include_names_file;
 
     bool m_skip_obj;
     bool m_use_gdt;

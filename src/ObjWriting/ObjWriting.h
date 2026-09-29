@@ -3,7 +3,10 @@
 #include "Dumping/AssetDumpingContext.h"
 #include "Zone/ZoneTypes.h"
 
+#include <unordered_set>
 #include <vector>
+
+class XAssetInfoGeneric;
 
 enum class ImageOutputFormat_e
 {
@@ -36,7 +39,13 @@ public:
         ModelOutputFormat_e ModelOutputFormat = ModelOutputFormat_e::GLB;
         bool MenuLegacyMode = false;
 
+        // --include-names: when set, only the assets in this set are dumped (the named assets and
+        // everything they depend on); their types still have to pass --include-assets.
+        bool FilterAssetsByName = false;
+        std::unordered_set<const XAssetInfoGeneric*> AssetsToDump;
+
     } Configuration;
 
     static bool ShouldHandleAssetType(asset_type_t assetType);
+    static bool ShouldDumpAsset(const XAssetInfoGeneric* asset);
 };

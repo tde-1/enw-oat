@@ -121,6 +121,13 @@ const CommandLineOption* const OPTION_INCLUDE_ASSETS =
     .Reusable()
     .Build();
 
+const CommandLineOption* const OPTION_INCLUDE_NAMES =
+    CommandLineOption::Builder::Create()
+    .WithLongName("include-names")
+    .WithDescription("A file of \"<type>,<name>\" lines (\"<type>,*\" = every asset of that type). Only those assets and the assets they depend on are dumped.")
+    .WithParameter("namesFile")
+    .Build();
+
 const CommandLineOption* const OPTION_LEGACY_MENUS =
     CommandLineOption::Builder::Create()
     .WithLongName("legacy-menus")
@@ -145,6 +152,7 @@ const CommandLineOption* const COMMAND_LINE_OPTIONS[]{
     OPTION_GDT,
     OPTION_EXCLUDE_ASSETS,
     OPTION_INCLUDE_ASSETS,
+    OPTION_INCLUDE_NAMES,
     OPTION_LEGACY_MENUS,
 };
 
@@ -383,6 +391,10 @@ bool UnlinkerArgs::ParseArgs(const int argc, const char** argv, bool& shouldCont
         for (const auto& include : m_argument_parser.GetParametersForOption(OPTION_INCLUDE_ASSETS))
             ParseCommaSeparatedAssetTypeString(include);
     }
+
+    // --include-names
+    if (m_argument_parser.IsOptionSpecified(OPTION_INCLUDE_NAMES))
+        m_include_names_file = m_argument_parser.GetValueForOption(OPTION_INCLUDE_NAMES);
 
     // --legacy-menus
     if (m_argument_parser.IsOptionSpecified(OPTION_LEGACY_MENUS))

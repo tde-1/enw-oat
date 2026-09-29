@@ -2,6 +2,7 @@
 
 #include "Game/IAsset.h"
 #include "IAssetDumper.h"
+#include "ObjWriting.h"
 #include "Pool/AssetPool.h"
 #include "Utils/Logging/Log.h"
 
@@ -26,7 +27,7 @@ public:
 
         for (const auto* assetInfo : context.m_zone.m_pools.PoolAssets<Asset_t>())
         {
-            if (assetInfo->IsReference() || !ShouldDump(*assetInfo))
+            if (assetInfo->IsReference() || !ObjWriting::ShouldDumpAsset(assetInfo) || !ShouldDump(*assetInfo))
             {
                 context.IncrementProgress();
                 continue;

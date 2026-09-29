@@ -30,3 +30,8 @@ bool ObjWriting::ShouldHandleAssetType(const asset_type_t assetType)
 
     return Configuration.AssetTypesToHandleBitfield[assetType];
 }
+
+bool ObjWriting::ShouldDumpAsset(const XAssetInfoGeneric* asset)
+{
+    return !Configuration.FilterAssetsByName || Configuration.AssetsToDump.contains(asset);
+}

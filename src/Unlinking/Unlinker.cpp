@@ -163,6 +163,74 @@ namespace
             return true;
         }
 
+        // --include-names (ENW Zombies): the named assets ("<type>,<name>" lines, "<type>,*" for
+        // every asset of a type) and, recursively, every asset they depend on. Nothing else is dumped.
+        bool UpdateAssetNameFilter(const Zone& zone) const
+        {
+            auto& keep = ObjWriting::Configuration.AssetsToDump;
+            keep.clear();
+            ObjWriting::Configuration.FilterAssetsByName = false;
+            if (m_args.m_include_names_file.empty())
+                return true;
+
+            std::ifstream in(m_args.m_include_names_file);
+            if (!in.is_open())
+            {
+                con::error("Could not open names file \"{}\"", m_args.m_include_names_file);
+                return false;
+            }
+
+            const auto* game = IGame::GetGameById(zone.m_game_id);
+            std::vector<const XAssetInfoGeneric*> todo;
+            const auto add = [&](const XAssetInfoGeneric* asset)
+            {
+                if (asset && keep.emplace(asset).second)
+                    todo.push_back(asset);
+            };
+            const auto trim = [](std::string s)
+            {
+                const auto first = s.find_first_not_of(" \t\r\n");
+                if (first == std::string::npos)
+                    return std::string();
+                return s.substr(first, s.find_last_not_of(" \t\r\n") - first + 1);
+            };
+
+            std::string line;
+            auto named = 0u;
+            while (std::getline(in, line))
+            {
+                const auto comma = line.find(',');
+                if (comma == std::string::npos)
+                    continue;
+                const auto typeName = trim(line.substr(0, comma));
+                const auto assetName = trim(line.substr(comma + 1));
+                const auto type = game->FindAssetTypeByName(typeName);
+                if (!type || assetName.empty())
+                    continue;
+                if (assetName == "*")
+                {
+                    for (const auto* asset : zone.m_pools)
+                        if (asset->m_type == *type)
+                            add(asset);
+                }
+                else
+                    add(zone.m_pools.GetAsset(*type, assetName));
+                named++;
+            }
+
+            while (!todo.empty())
+            {
+                const auto* asset = todo.back();
+                todo.pop_back();
+                for (const auto* dependency : asset->m_dependencies)
+                    add(dependency);
+            }
+
+            ObjWriting::Configuration.FilterAssetsByName = true;
+            con::info("Name filter: {} lines, {} assets with their dependencies", named, keep.size());
+            return true;
+        }
+
         void UpdateAssetIncludesAndExcludes(const AssetDumpingContext& context) const
         {
             const auto gameId = context.m_zone.m_game_id;
@@ -251,6 +319,8 @@ namespace
                 }
 
                 UpdateAssetIncludesAndExcludes(context);
+                if (!UpdateAssetNameFilter(zone))
+                    return false;
 
                 auto* objWriter = IObjWriter::GetObjWriterForGame(zone.m_game_id);
 
